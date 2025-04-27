@@ -3,16 +3,16 @@
 SendMode "Input"
 SetWorkingDir A_ScriptDir
 
-#Warn All, StdOut
+#Warn All, Off
 #ErrorStdOut 'UTF-8'
 
 #include %A_WorkingDir%\Lib\OCR.ahk
-#Include %A_WorkingDir%\Lib\print_debug.ahk
+; #Include %A_WorkingDir%\Lib\print_debug.ahk
 #include %A_WorkingDir%\Lib\fuzzy.ahk
 #include %A_WorkingDir%\Lib\gtranslate.ahk
 #include %A_WorkingDir%\Lib\_JXON.ahk
 
-CoordMode('Pixel', 'Screen')
+CoordMode('Pixel', 'Client')
 CoordMode('Mouse', 'Screen')
 CoordMode('ToolTip', 'Screen')
 
@@ -27,11 +27,20 @@ goTL := ScreenTL()
 class ScreenTL
 {
     config_fileName := A_ScriptDir "/SCREEN_OCR_config.ini"
+    OldOCRResult := ""
+    toggle_start := 0
+    OldoutDetectWinX  := ""
+    OldoutDetectWinY := ""
+    OldoutDetectWinWinID := ""
+    oldUpDown_FontSize := ""
+    oldFontOptions := ""
+    Oldedit_colorTextBackground := ""
+    Oldedit_colorTextFont := ""
+
     __New() {
-
-        OnError(LogError)
-
         ; this.LoadConfigs(1,1)
+        pre := "[ON START] "
+
 
         this.guiStartUP := Gui()
         ; this.guiStartup.SetFont("c529955")
@@ -39,8 +48,10 @@ class ScreenTL
         this.guiStartup.BackColor := 0x202020
         this.guiStartUP.Opt("+DPIScale")
         this.guiSB := this.guiStartUP.Add("StatusBar",, "Hi")
-        this.Log("Initializing...")
+        this.Log("Initializing...", pre)
+        this.GenerateGuiOverlay
         this.Initialize()
+
         this.guiStartUP.SetFont("w700 c50B9FE")
 
 
@@ -91,22 +102,23 @@ class ScreenTL
         this.GenerateList()
 
         this.LANG_LIST := this.ListOfInstalledLanguages()
-
+        this.guiStartUP.SetFont("c1f00cc")
         this.ddl_OCR := this.guiStartup.Add("DDL", "vDDLvar w" this.Gui_CTRL_WIDTH " ", this.LANG_LIST)
         this.ddl_OCR.OnEvent("Change", ObjBindMethod(this, "SaveConfigs"))
-
+        this.guiStartUP.SetFont("w700 c6A9955")
         this.guiStartUP.Add("Text")
 
         this.guiStartUP.Add("Text", "center w" this.Gui_CTRL_WIDTH, "EXPERIMENTAL")
         this.guiStartUP.SetFont("w400")
 
         if !(A_IsAdmin) {
-            this.guiStartUP.Add("Text", "w" this.Gui_CTRL_WIDTH, "View list of Available OCR Languages to download?`n`nTo see list, script must start with admin rights.")
+            this.guiStartUP.Add("Text", "w" this.Gui_CTRL_WIDTH, "View list of Available OCR Languages to download?`n`nTo see list, script must start with admin rights.`nCurrent Admin Status: " (A_IsAdmin ? "Is Admin" : "Is NOT Admin"))
             this.OCR_Available_DL_Languages := this.guiStartUP.Add("Button", "w" this.Gui_CTRL_WIDTH " ", "> Click Here to Load List! <`nAdmin privileges needed!`n`n After you select [Yes] on the UAC, a blue window will pop up briefly before disappearing. That is normal!")
             ; handler := .bind(this, "PowerShellList").
 
             this.OCR_Available_DL_Languages.OnEvent("Click", ObjBindMethod(this, "PowerShellList"))
         } else {
+            this.guiStartUP.Add("Text", "center w" this.Gui_CTRL_WIDTH, "Current Admin Status: " (A_IsAdmin ? "Is Admin" : "Is NOT Admin"))
             ddl_OCR_Avail := []
             for k, v in this.PowerShellList(1,1)
             {
@@ -116,9 +128,14 @@ class ScreenTL
                 ddl_OCR_Avail.Push(v)
             }
 
-            this.guiStartUP.Add("Text", "center w" this.Gui_CTRL_WIDTH, "Use Powershell to download/remove the selected language:")
+            this.guiStartUP.Add("Text", " w" this.Gui_CTRL_WIDTH, "Use Powershell to download/remove the selected language:")
+
+            this.guiStartUP.SetFont("c1f00cc")
             this.OCR_Available_DL_Languages := this.guiStartUP.Add("DDL", "vDDLAvail w" this.Gui_CTRL_WIDTH , ddl_ocr_Avail)
+            this.OCR_Available_DL_Languages.choose(1)
             this.OCR_Available_DL_Languages.OnEvent("Change", ObjBindMethod(this, "SaveConfigs"))
+            this.guiStartUP.SetFont("w700 c6A9955")
+
 
             this.Btn_DL_Language := this.guiStartUP.Add("Button", "w" this.Gui_CTRL_WIDTH , "DOWNLOAD selected Language!")
             this.Btn_DL_Language.OnEvent("Click", ObjBindMethod(this, "DL_Language"))
@@ -147,36 +164,81 @@ class ScreenTL
         this.ddl_dest := this.guiStartUP.Add("ddl","vddl_src_dest w" this.Gui_CTRL_WIDTH, this.gListDest)
         this.ddl_dest.OnEvent("Change", ObjBindMethod(this, "SaveConfigs"))
 
+        this.guiStartUP.SetFont("c4ecc35")
         this.guiStartUP.Add("Text" , "section ys ")
-        this.guiStartUP.Add("Text", "center w" this.Gui_CTRL_WIDTH, "Click button below to start OCR")
-        this.btn_START := this.guiStartUP.Add("Button", "w" this.Gui_CTRL_WIDTH, "START OCR!")
-        this.btn_START.OnEvent("Click", ObjBindMethod(this, "StartOCR"))
-        ; TODO: on start, disable three dropdowns
-        ; disable all othe fields.
-        ;
+        ; this.guiStartUP.Add("Text", "center w" this.Gui_CTRL_WIDTH, "Click button below to start OCR")
 
-
-        this.guiStartUP.Add("Text")
-        this.guiStartUP.Add("Text", "center w" this.Gui_CTRL_WIDTH, "Click button below to stop OCR")
-        this.btn_STOP := this.guiStartUP.Add("Button", "w" this.Gui_CTRL_WIDTH, "Stop OCR")
-
-        ; TODO: On stop, enable three dropdowns
-        ; enable all other fields.
 
         ; edit box to type in window Title
-        this.guiStartUP.Add("Text"
-                        , " w" this.Gui_CTRL_WIDTH,
-                        'The title of the Window to focus on. Set to "A" for active window. You can specify "ahk_exe notepad.exe" to focus on the process name. For example, for "notepad.exe", you would put in "ahk_exe notepad.exe" ')
-        this.edit_winTitle := this.guiStartUP.Add("Edit", "center w" this.Gui_CTRL_WIDTH " vVar_WinTitle", "A")
+        this.guiStartUP.SetFont("w700")
+        this.guiStartUP.Add("Text", " w" this.Gui_CTRL_WIDTH, "Window Title Notes:")
+        this.guiStartUP.SetFont("w400")
+        this.guiStartUP.Add("Text", " w" this.Gui_CTRL_WIDTH,
+        '- The title of the Window to focus on.`n'
+        '- Set to "A" for "any window that is active" .' "`n"
+        '- You can specify "ahk_exe notepad.exe" to focus on the process name.' "`n"
+        '- For example, for "notepad.exe", you would put in "ahk_exe notepad.exe" ')
+        this.guiStartUP.Add("Text")
+
+        this.btn_WINTITLE := this.guiStartUP.Add("Button", "w" this.Gui_CTRL_WIDTH, "Help Find Window Name")
+        this.btn_WINTITLE.OnEvent("Click", ObjBindMethod(this, "FindWindowName"))
+
+        this.guiStartUP.SetFont("c1f00cc")
+        this.edit_winTitle := this.guiStartUP.Add("Edit", " r3 center w" this.Gui_CTRL_WIDTH " vVar_WinTitle", "A")
         this.edit_winTitle.OnEvent("Change", ObjBindMethod(this, "SetWinTitle"))
+        this.guiStartUP.SetFont("c4ecc35")
+
+        this.chkShowOnActive := this.guiStartUP.Add("CheckBox", "","Show words only when the TARGET WINDOW is active?")
+        this.chkShowOnActive.OnEvent("Click", ObjBindMethod(this, "SaveConfigs"))
 
 
+        ; TODO FONT ADJUSTMENTS
+        this.guiStartUP.Add("Text")
+        this.guiStartUP.SetFont("w700")
+        this.guiStartUP.Add("Text", "", "Font options for your OCR/TL!")
+        this.guiStartUP.SetFont("w400")
+
+        this.ddl_FontOptions := this.guiStartup.Add("ddl", "w" this.Gui_CTRL_WIDTH, this.FontOptions())
+        this.ddl_fontOptions.OnEvent("Change", ObjBindMethod(this, "SaveConfigs"))
+
+        this.guiStartUP.Add("Text")
+        this.guiStartUP.Add("Text",,"Font Size: ")
+        this.guiStartUP.Add("Text", "r2 center w" this.Gui_CTRL_WIDTH // 4, "")
+        this.UpDown_FontSize := this.guiStartUP.Add("UpDown", "Left Range8-100", IniRead(this.config_fileName,"GUI", "UpDownFontSize", 14))
+        this.UpDown_FontSize.OnEvent("Change", (*) => this.Log("Font Size Changed: " this.UpDown_FontSize.Value))
+        this.guiStartUP.Add("Text", "w" this.Gui_CTRL_WIDTH // 2 " xp right", "FONT HEX color: 0x`n`nBKGRND HEX color: 0x")
+        this.edit_colorTextFont := this.guiStartUP.Add("Edit", "w" (this.Gui_CTRL_WIDTH // 2 ) - 6 " limit6 yp", )
+        this.edit_colorTextFont.OnEvent("Change", (*) => this.LimitToHex(this.edit_colorTextFont))
+        
+
+        this.edit_colorTextBackground := this.guiStartUP.Add("Edit",  "w" (this.Gui_CTRL_WIDTH // 2) - 6 " limit6 xp", )
+        this.edit_colorTextBackground.OnEvent("Change", (*) => this.LimitToHex(this.edit_colorTextBackground))
+
+        this.guiStartUP.Add("text", "xs w" this.Gui_CTRL_WIDTH, "Note: HEX Colors range from 0x000000 to 0xFFFFFF. To set a transparent color, use 'EEAA99' (Not Recommended). ")
+
+        this.guiStartUP.Add("Text", "xs section")
+        this.btn_START := this.guiStartUP.Add("Button", "xs w" this.Gui_CTRL_WIDTH, "START Screen Translation")
+        this.btn_START.OnEvent("Click", ObjBindMethod(this, "StartOCR"))
+        ;
+        ; this.guiStartUP.Add("Text", "center w" this.Gui_CTRL_WIDTH, "Click button below to stop OCR")
+        this.btn_STOP := this.guiStartUP.Add("Button", "xs w" this.Gui_CTRL_WIDTH, "STOP Screen Translation")
+        this.btn_stop.OnEvent("Click", ObjBindMethod(this, "EndOCR"))
         ; maybe a listview box using WinGet?
+
+        ; TODO: Edit Controls for:
+        ; Text Color
+        ; Background for Text color
+
+
         this.LoadConfigs(1,1)
 
-        this.guiStartUP.Show()
+        this.guiStartUP.Show("x" this.MainGuiX " y" this.MainGuiY)
         this.guiStartUP.OnEvent("Close", ObjBindMethod(this, "OnGuiClose"))
 
+        this.btn_stop.Enabled := False
+        this.edit_winTitle.Enabled := True
+
+        this.Log("Loaded Successfully!", pre)
 
     }
 
@@ -185,8 +247,160 @@ class ScreenTL
         this.Log("Saving Window Title...")
     }
 
+    ExtractFromSquareBracket(str) {
+        RegExMatch(str, "^.*?\[(.*?)\]", &matchSrc)
+        var := matchSrc[1]
+        return var
+    }
+
+    ReadScreen(callback, info) {
+        pre := "[READING]: "
+        this.Log("Reading Screen", pre)
+        this.edit_winTitle.Enabled := False
+        if (WinActive(this.edit_winTitle.Value) && this.chkShowOnActive.Value) || (!(this.chkShowOnActive.Value))
+        {
+            if (!WinActive(this.edit_winTitle.text) && this.ChkShowOnActive.Value)
+            {
+                this.guiOverlay.Hide()
+            }
+            ; MsgBox(this.edit_winTitle.Text)
+            this.Log("Found " this.edit_winTitle.Text "? " (WinActive(this.edit_winTitle.Text)), pre)
+            if !WinExist(this.edit_winTitle.Text)
+            {
+                this.Log("Window Title: [" this.edit_winTitle.Text "] does not exist.", pre)
+                return
+            }
+
+            language := (this.LANG_LIST[this.ddl_OCR.Value])
+
+            this.ocrResult := OCR.FromWindow(this.edit_winTitle.Text, {scale:2, lang:language})
+            fuz := Fuzzy()
+
+            val1 := Fuz.Match(this.oldOCRResult,this.ocrResult.text)
+
+            WinGetPos(&winX, &winY, &winW, &winH, this.edit_winTitle.Value)
+
+            ; if lower than threshold                OR   Window position changes  OR  Font Size Change  OR Font OPTIONS change
+            if (val1 > this.OCR_SIMILARITY_THRESHOLD) && ((  (this.OldwinX = winX)
+                                                          && (this.OldwinY = winY)
+                                                          && (this.OldwinW = winW)
+                                                          && (this.OldwinH = winH))
+                                                                                    && (this.oldUpDown_FontSize = this.UpDown_FontSize.Value)
+                                                                                    && (this.oldFontOptions     = this.ddl_fontOPtions.Text)
+                &&    (this.Oldedit_colorTextBackground = this.edit_colorTextBackground.Value)
+                &&    (this.Oldedit_colorTextFont = this.edit_colorTextFont.Value)
+                )
+                return
+
+            this.Oldedit_colorTextBackground := this.edit_colorTextBackground.Value
+            this.Oldedit_colorTextFont := this.edit_colorTextFont.Value
+
+            this.oldUpDown_FontSize := this.UpDown_FontSize.Value
+            this.oldFontOptions := this.ddl_fontOPtions.Text
+
+            if (val1 <= this.OCR_SIMILARITY_THRESHOLD) || (this.OldwinX = winX)
+                || (this.OldwinY = winY)
+                || (this.OldwinW = winW)
+                || (this.OldwinH = winH)
+                this.OldOCRResult := this.ocrResult.Text
+
+            this.OldwinX := winX
+            this.OldwinY := winY
+            this.OldwinW := winW
+            this.OldwinH := winH
+
+            this.GenerateGUIOverlay()
+
+            tempOCRLines := []
+            ; Iterate over each detected line
+            for index, line in this.ocrResult.Lines
+            {
+                ; Get the line text
+                text := line.Text
+
+                ; Or use the shortcut properties:
+                x := line.x
+                y := line.y
+                w := line.w
+                h := line.h
+
+                ; MouseMove(x, y, 1)
+                tempOCRLines.Push({text:text, x:x, y:y, w:w, h:h})
+                ; MsgBox("{text:" text "`n(" x "," y "," w "," h ")")
+            }
+
+            str_tempOCRLines := ""
+            for k, v in tempOCRLines
+            {
+                str_tempOCRLines .= v.text "`n"
+            }
+
+            var_tlTo := this.ExtractFromSquareBracket(this.ddl_dest.Text)
+
+            if !(Var_tlTo = (StrSplit(language,"-")[1])) {
+                tl_text := Translator.Translate(str_tempOCRLines, var_tlTo)
+            } else {
+                tl_text := str_tempOCRLines
+            }
+                    ; TODO: Add font size here
+                    if (this.edit_colorTextFont.text = "")
+                        this.edit_colorTextFont.text := "FFFF00"
+                    this.guiOverlay.setFont("c" this.edit_colorTextFont.text " s" this.UpDown_FontSize.Value, this.ddl_FontOptions.Text)
+                for index, text in StrSplit(tl_text, "`n")
+                {
+                    if (!text)
+                        continue
+
+                    if (this.edit_colorTextBackground.Value = "")
+                        this.edit_colorTextBackground.Value := "000000"
+                    this.guiOverlay.Add("Text"
+                        , "x" tempOCRLines[index].x " y" tempOCRLines[index].y " Background" this.edit_colorTextBackground.Value
+                        , text
+                    )
+                }
+
+
+            ; 4) Show full-screen and turn GREEN into per-pixel transparency
+            this.guiOverlay.Opt("+LastFound +E0x20")
+            WinSetTransColor(this.guiOverlay.BackColor, this.guiOverlay)
+
+            WinGetPos(&winX, &winY, &winW, &winH, this.edit_winTitle.Text)
+
+            this.winX := winX
+            this.winY := winY
+            this.winW := winW
+            this.winH := winH
+
+            this.guiOverlay.Show("x" this.winX " y" this.winY " w" this.winW " h" this.winH " NA")
+        } else
+            this.guiOverlay.hide
+    }
+
+    GenerateGuiOverlay(){
+        ; If a GUI already exists, destroy it first
+        try {
+            this.guiOverlay.Destroy()
+            this.guiOverlay := ""            ; clear the variable
+        }
+
+        this.Log("Generating Overlay")
+
+        this.guiOverlay := Gui()
+        this.guiOverlay.opt("+AlwaysOnTop +ToolWindow -Caption")
+        ; this.guiOverlay.Opt(" +E0x80000")
+        ; this.guiOverlay.Color := "0x202020"           ; fill it GREEN (we’ll key this out)
+        this.guiOverlay.BackColor := "0xEEAA99"           ; The color to make transparent)
+    }
+
+    HideGuiOverlay() {
+        this.guiOverlay.Hide()
+    }
+
     StartOCR(callback, info) {
-        this.Log("Starting OCR")
+        pre := "[OCR] "
+        this.Log("Starting OCR", pre)
+        this.btn_start.Enabled := False
+        this.btn_stop.Enabled := True
         this.SaveConfigs(1,1)
         ; this.guiStartUP.submit(1)
         ; this.chkNotes.Value
@@ -199,41 +413,102 @@ class ScreenTL
         ; this.ddl_OCR.Value:  fr-FR
         ; this.ddl_src.Value:  Auto Detect [auto]
         ; this.ddl_dest.Value: English_United_States [en]
+
         if (this.ddl_src.Value)
-            RegExMatch(this.gListSrc[this.ddl_src.Value], "^.*?\[(.*?)\]", &matchSrc)
+            ; RegExMatch(this.gListSrc[this.ddl_src.Value], "^.*?\[(.*?)\]", &matchSrc)
+            reg_ddl_src := this.ExtractFromSquareBracket(this.ddl_src.Text)
+            this.Log("Google Source Selection: " this.ddl_src.Text, pre)
 
-        this.Log("Google Source Selection: " this.ddl_src.value)
         if (this.ddl_dest.Value)
-            RegExMatch(this.gListDest[this.ddl_dest.Value], "^.*?\[(.*?)\]", &matchDest)
-        this.Log("Google Destination Selection: " this.ddl_dest.value)
+            reg_ddl_dest := this.ExtractFromSquareBracket(this.ddl_dest.Text)
+            ; RegExMatch(this.gListDest[this.ddl_dest.Text], "^.*?\[(.*?)\]", &matchDest)
+
+            this.Log("Google Destination Selection: " this.ddl_dest.Text, pre)
 
 
-        this.Log(
-            "this.ddl_OCR.Value:  " this.LANG_LIST[this.ddl_OCR.Value] "`n"
-            "this.ddl_src.Value:  " (this.ddl_src.Value ? matchSrc[1] : 0) "`n"
-            "this.ddl_dest.Value: " (this.ddl_dest.Value ? matchDest[1] : 0) "`n"
-            "this.ddl_dest.Value: " this.edit_winTitle.Value "`n"
-        )
+        ; this.Log(
+        ;     "this.ddl_OCR.Value:  " this.LANG_LIST[this.ddl_OCR.Value] "`n"
+        ;     "this.ddl_src.Value:  " (this.ddl_src.Value ? reg_ddl_src : 0) "`n"
+        ;     "this.ddl_dest.Value: " (this.ddl_dest.Value ? reg_ddl_dest : 0) "`n"
+        ;     "this.ddl_dest.Value: " this.edit_winTitle.Value "`n"
+        ; , pre)
         ; disable fields
 
         ; retrievew variables
         ; start OCR
+
+        this.objReadScreen := ObjBindMethod(this, "ReadScreen").Bind(1,1)
+        SetTimer(this.objReadScreen, 80)
     }
+
 
     EndOCR(callback, info) {
         this.Log("OCR Stopped!")
+        SetTimer(this.ObjReadScreen, 0)
+        this.HideGuiOverlay
+
+        this.btn_START.Enabled := True
+        this.btn_Stop.Enabled := False
+        this.edit_winTitle.Enabled := True
         ; Enable Fields
         ; stop OCR
     }
 
-    BtnDisableFields(callback, info) {
-
+    FindWindowName(callback, info) {
+        this.edit_winTitle.Enabled := False
+        this.timer_DetectWindowName := ObjBindMethod(this, "DetectWindowName")
+        SetTimer(this.timer_DetectWindowName, 80)
+        this.Log("Finding Window...")
     }
 
-    BtnEnableFields(callback, info) {
+    DetectWindowName() {
+        MouseGetPos(&outDetectWinX, &outDetectWinY,&outDetectWinWinID)
 
+        if  (this.OldoutDetectWinX  = outDetectWinX )
+        &&  (this.OldoutDetectWinY = outDetectWinY)
+        &&  (this.OldoutDetectWinWinID = outDetectWinWinID)
+        &&  !(GetKeyState("LCtrl","P"))
+        &&  !(GetKeyState("RCtrl","P"))
+        &&  !(GetKeyState("Esc","P"))
+            return
 
-    }
+        this.OldoutDetectWinX  := outDetectWinX
+        this.OldoutDetectWinY := outDetectWinY
+        this.OldoutDetectWinWinID := outDetectWinWinID
+
+        winT := WinGetTitle("ahk_id" outDetectWinWinID)
+        winP := WinGetProcessName("ahk_id" outDetectWinWinID)
+
+        str := Format("
+        (
+            Window Title:
+            --------------------------------------------
+            {1} ahk_exe {2}
+            --------------------------------------------
+            Press [Ctrl] to save and update your GUI.
+            Press [Esc] to cancel.
+            )",
+            winT, winP
+        )
+
+        ToolTip(str, outDetectWinX - 150, outDetectWinY + 40)
+
+        if GetKeyState("LCtrl", "P") || GetKeyState("RCtrl", "P")
+        {
+            SetTimer(this.timer_DetectWindowName, 0)
+            ToolTip()
+
+            this.edit_winTitle.Value := winT " ahk_exe " winP
+            this.edit_winTitle.Enabled := True
+            this.Log("Finding Window: Window Saved to Edit box!")
+        } else if (GetKeyState("Esc", "P"))
+        {
+            SetTimer(this.timer_DetectWindowName, 0)
+            ToolTip()
+            this.edit_winTitle.Enabled := True
+            this.Log("Finding Window: Cancelled")
+        }
+}
 
     Log(str, prefix := "") {
         time := "[" A_Hour ":" A_Min ":" A_Sec "]: "
@@ -241,6 +516,16 @@ class ScreenTL
     }
 
     OnGuiClose(*) {
+
+        WinGetPos(&MainGuiX, &MainGuiY, &MainGuiW, &MainGuiH, "ahk_id" this.guiStartUP.hwnd)
+
+        this.MainGuiX := MainGuiX
+        this.MainGuiY := MainGuiY
+        this.MainGuiW := MainGuiW
+        this.MainGuiH := MainGuiH
+
+        this.SaveConfigs(1,1)
+
         ExitApp
     }
 
@@ -267,61 +552,104 @@ class ScreenTL
         This.Log(errMsg, "[ERROR] ")
     }
 
+    LimitToHex(ctrl) {
+        this.Log("Changing colors: " ctrl.Text)
+        text := ctrl.Text
+        newText := ""
+        for char in StrSplit(text)
+        {
+            if ( (Ord(char) >= 48 && Ord(char) <= 57)   ; 0-9
+              || (Ord(char) >= 65 && Ord(char) <= 70)    ; A-F
+              || (Ord(char) >= 97 && Ord(char) <= 102) ) ; a-f
+            {
+                newText .= char
+            }
+        }
+        if (newText != text)
+        {
+            if !(StrLen(newText) = 0)
+                ctrl.Text := newText
+            else
+                ctrl.Text := "000000"
+        }
+
+        this.SaveConfigs(1,1)
+    }
+
     SaveConfigs(callback, info) {
-        this.Log("Saving Configs")
+        pre := "[SAVE] "
+        this.Log("Saving Configs", pre)
         this.guiStartUP.Submit(0)
 
         try {
-            IniWrite(this.ddl_OCR.Text,  this.config_fileName, "OCR", "UWP")
-            IniWrite(this.ddl_src.Text,  this.config_fileName, "OCR", "gTL_FROM")
-            IniWrite(this.ddl_dest.Text, this.config_fileName, "OCR", "gTL_TO")
+            IniWrite(Trim(this.ddl_OCR.Text),  this.config_fileName, "OCR", "UWP")
+            IniWrite(Trim(this.ddl_src.Text),  this.config_fileName, "OCR", "gTL_FROM")
+            IniWrite(Trim(this.ddl_dest.Text), this.config_fileName, "OCR", "gTL_TO")
 
-            IniWrite(this.chkNotes.Value, this.config_fileName, "Settings","ShowNotes")
-            IniWrite(this.edit_winTitle.Value, this.config_fileName, "Settings", "TargetWindow")
+            IniWrite(Trim(this.chkNotes.Value), this.config_fileName, "Settings","ShowNotes")
+            IniWrite(Trim(this.edit_winTitle.Value), this.config_fileName, "Settings", "TargetWindow")
+            ; this.OCR_SIMILARITY_THRESHOLD := IniRead(this.config_fileName, "Settings","OCR_SIMILARITY_THRESHOLD", 80)
+
+            IniWrite(Trim(this.OCR_SIMILARITY_THRESHOLD), this.config_fileName,"Settings", "OCR_SIMILARITY_THRESHOLD")
+            IniWrite(Trim(this.ChkShowOnActive.Value),this.config_fileName,"Settings","varShowOnActive")
+
+            IniWrite(this.MainGuiX, this.config_fileName, "GUI","MainGuiX")
+            IniWrite(this.MainGuiY, this.config_fileName, "GUI","MainGuiY")
+
+            IniWrite(this.ddl_FontOptions.Text, this.config_fileName, "GUI", "Font")
+
+            if (StrLen(This.edit_colorTextFont.Value) = 6)
+                IniWrite((this.edit_colorTextFont.Value), this.config_fileName, "GUI", "FontColor")
+            if (StrLen(This.edit_colorTextBackground.Value) = 6)
+                IniWrite((this.edit_colorTextBackground.Value), this.config_fileName, "GUI", "FontBackground")
+            IniWrite(this.UpDown_FontSize.Value,this.config_fileName,"GUI","UpDownFontSize")
+            ; MsgBox(this.OCR_SIMILARITY_THRESHOLD)
+            this.Log("Configs saved", pre)
         }
         catch as e {
-            this.Log("Saving Error: " e.What A_Tab e.Message)
+            this.Log("Saving Error: " e.What A_Tab e.Message, pre)
+            ; MsgBox("Saving Error: [" e.line "]" e.What A_Tab e.Message)
         }
     }
 
     LoadConfigs(callback, info) {
-
+        pre := "[LOAD] "
         ; auto-select default configurations
-        this.Log("Loading configs")
+        this.Log("Loading configs", pre)
 
         try {
 
             var_OCR   := IniRead(this.config_fileName, "OCR","UWP", "en-US")
-            this.Log("Saved OCR Language: " var_OCR)
+            this.Log("Saved OCR Language: " var_OCR, pre)
 
-            this.Log("Attempting to load OCR Language: " var_OCR)
+            this.Log("Loading OCR Language: " var_OCR, pre)
             this.ddl_OCR.choose(var_OCR)
         } catch {
-            this.Log("Failed to load OCR Language: " var_OCR ". Choosing first available language.")
+            this.Log("Failed to load OCR Language: " var_OCR ". Choosing first available language.", pre)
             this.ddl_OCR.choose(1)
         }
 
         try
         {
             var_gSrc  := IniRead(this.config_fileName, "OCR","gTL_FROM", "Auto Detect [auto]")
-            this.Log("Saved Language to translate from: " var_gSrc)
+            this.Log("Saved Language to translate from: " var_gSrc, pre)
 
-            this.Log("Attempting to choose on drop down list: " var_gSrc)
+            this.Log("Loading [TL FROM] drop down list: " var_gSrc, pre)
             this.ddl_src.choose(var_gSrc)
         } catch {
-            this.Log("Failed to load SOURCE language. Setting as 'Auto Detect'")
+            this.Log("Failed to load SOURCE language. Setting as 'Auto Detect'", pre)
             this.ddl_src.choose(1)
         }
 
         try
         {
             var_gDest := IniRead(this.config_fileName, "OCR","gTL_TO", "en")
-            this.Log("Saved Language to translate from: " var_gDest)
+            this.Log("Saved Language to translate from: " var_gDest, pre)
 
-            this.Log("Attempting to choose on drop down list: " var_gDest)
+            this.Log("Attempting to choose on [TL TO] drop down list: " var_gDest, pre)
             this.ddl_dest.choose(var_gDest)
         } catch {
-            this.Log("Failed to load DESTINATION language. Setting as first available language.")
+            this.Log("Failed to load DESTINATION language. Setting as first available language.", pre)
             this.ddl_dest.choose(1)
         }
 
@@ -332,37 +660,40 @@ class ScreenTL
 
             var_TargetWindows := IniRead(this.config_fileName, "Settings", "TargetWindow", "A")
             this.edit_winTitle.Value := var_TargetWindows
+
+            var_ShowOnActive := IniRead(this.config_fileName, "Settings","varShowOnActive",1)
+            this.chkShowOnActive.Value := var_ShowOnActive
+
+            this.MainGuiX := IniRead(this.config_fileName,"GUI","MainGuiX",0)
+            this.MainGuiY := IniRead(this.config_fileName,"GUI","MainGuiY",0)
+
+            this.ddl_FontOptions.Text := IniRead(this.config_fileName, "GUI", "Font", "Arial")
+            this.edit_colorTextFont.Value := IniRead(this.config_fileName, "GUI", "FontColor", "FFFF00")
+            this.edit_colorTextBackground.Value := IniRead(this.config_fileName, "GUI", "FontBackground", "000000")
+            this.UpDown_FontSize.Value := IniRead(this.config_fileName,"GUI", "UpDownFontSize", 14)
        }
         catch as e {
-            MsgBox("Loading Error: " e.What)
+            MsgBox("Loading Error: " e.Message)
         }
     }
 
     Initialize() {
         this.Log("Initializing")
-        ; try {
-            ; throw Error("Fail", -1)
+
             this.var_ShowNotes := IniRead(this.config_fileName, "Settings","ShowNotes", 1)
             this.Gui_WIDTH := 300
             this.Gui_CTRL_WIDTH := this.GUI_WIDTH - 20
-            
-        ; } catch as e {
-        ;     MsgBox(
-        ;         "Message: " e.Message "`n-----`n"
+            this.MainGuiX := IniRead(this.config_fileName,"GUI","MainGuiX",0)
+            this.MainGuiY := IniRead(this.config_fileName,"GUI","MainGuiY",0)
 
-        ;         "What:" e.What "`n-----`n"
+            this.OCR_SIMILARITY_THRESHOLD := IniRead(this.config_fileName, "Settings","OCR_SIMILARITY_THRESHOLD", "0.80")
 
-        ;         "Extra:" e.Extra "`n-----`n"
-
-        ;         "File:" e.File "`n-----`n"
-
-        ;         "Line:" e.Line "`n-----`n"
-        ;         "Stack:" e.Stack "`n-----`n"
-        ;     )
-        ; }
+            ; MsgBox(this.OCR_SIMILARITY_THRESHOLD)
+            this.guiOverlay := Gui()
     }
 
     GenerateList() {
+        this.Log("Generating lists")
         ; Generates UWP OCR Lists of Installed Languages
         this.LANG_LIST := this.ListOfInstalledLanguages()
         ; this.LANG_LIST.Pop()
@@ -378,6 +709,7 @@ class ScreenTL
     }
 
     RefreshDDL() {
+        this.Log("Refreshing drop down lists")
         this.guiStartUP.submit
 
         this.GenerateList()
@@ -396,6 +728,7 @@ class ScreenTL
     }
 
     RMV_Language(callback, info) {
+        this.Log("Removing Language" this.OCR_Available_DL_Languages.Text)
         this.guiStartUP.submit
         this.SaveConfigs(1,1)
 
@@ -416,6 +749,7 @@ class ScreenTL
     }
 
     DL_Language(callback, info) {
+        this.Log("Downloading language: " this.OCR_Available_DL_Languages.Text)
         this.guiStartUP.submit
         this.SaveConfigs(1,1)
 
@@ -429,9 +763,9 @@ class ScreenTL
         this.guiStartUP.Hide()
         this.powershellWait(psCommand)
 
-            LANG_LIST := this.ListOfInstalledLanguages()
-            this.RefreshDDL
-            this.LoadConfigs(1,1)
+        LANG_LIST := this.ListOfInstalledLanguages()
+        this.RefreshDDL
+        this.LoadConfigs(1,1)
     }
 
     GetOcrLanguageName(capability) {
@@ -474,6 +808,7 @@ class ScreenTL
     }
 
     OpenLangSettings(callback, info) {
+        this.Log("Opened the Language & Region Settings on Window")
         try Run "ms-settings:regionlanguage"
     }
 
@@ -500,7 +835,8 @@ class ScreenTL
         (
             This script operates in three phases.
             PHASE 1: TEXT EXTRACTION - UWP OCR
-            To minimize installations of outside programs, this script taps into an OCR engine present in the Universal Windows Platform (UWP) API, specifically, the "Windows.Media.OCR" namespace. This is only available in Windows 10 and above.
+            To minimize installations of outside programs, this script taps into an OCR engine present in the Universal Windows Platform (UWP) API, specifically, the "Windows.Media.OCR" namespace.
+            This is only available in Windows 10 and above.
             To be able to extract the text, the appropriate language MUST be installed on your computer.
             PHASE 2: TEXT PARSING and TRANSLATING
             With the text retrieved from the OCR engine, the words are all joined together for one massive translation.
@@ -508,6 +844,8 @@ class ScreenTL
             PHASE 3: DISPLAY
             The UWP OCR stores the positions of the lines it decoded. AHK now uses those position, along with the newly translated lines, to draw the on screen.
             The drawing is done via an AHK GUI. The background is set to be transparent, and only the Texts are drawn, respective to their word locations.
+            Note:
+            For the text overlay to update, the words on screen must change or the window must change position!
         )"
 
         newVar := StrSplit(var, "`n")
@@ -543,7 +881,7 @@ class ScreenTL
             while (exec.Status = 1)
             {
                 Sleep 100
-                MsgBox(exec.StdOut.ReadAll())
+                ; MsgBox(exec.StdOut.ReadAll())
             }
 
             ; — read whatever was written to stdout/stderr
@@ -741,6 +1079,196 @@ class ScreenTL
             ["Vietnamese","042a","vi"]]
 
             return LanguageCodeArray
+    }
+
+    FontOptions() {
+        optionsFont := "
+        (
+            Aharoni
+            Aldhabi
+            Andalus
+            Angsana New
+            AngsanaUPC
+            Aparajita
+            Arabic Typesetting
+            Arial
+            Arial Black
+            Arial Nova
+            Bahnschrift
+            Batang
+            BatangChe
+            BIZ UDGothic
+            BIZ UDMincho Medium
+            BIZ UDPGothic
+            Browallia New
+            BrowalliaUPC
+            Calibri
+            Calibri Light
+            Cambria
+            Cambria Math
+            Candara
+            Cascadia Code
+            Cascadia Mono
+            Comic Sans MS
+            Consolas
+            Constantia
+            Corbel
+            Cordia New
+            CordiaUPC
+            Courier
+            Courier New
+            DaunPenh
+            David
+            DengXian
+            DFKai-SB
+            DilleniaUPC
+            DokChampa
+            Dotum
+            DotumChe
+            Ebrima
+            Estrangelo Edessa
+            EucrosiaUPC
+            Euphemia
+            FangSong
+            Fixedsys
+            Franklin Gothic Medium
+            FrankRuehl
+            FreesiaUPC
+            Gabriola
+            Gadugi
+            Gautami
+            Georgia
+            Georgia Pro
+            Gill Sans Nova
+            Gisha
+            Gulim
+            GulimChe
+            Gungsuh
+            GungsuhChe
+            HoloLens MDL2 Assets
+            Impact
+            Ink Free
+            IrisUPC
+            Iskoola Pota
+            JasmineUPC
+            Javanese Text
+            KaiTi
+            Kalinga
+            Kartika
+            Khmer UI
+            KodchiangUPC
+            Kokila
+            Lao UI
+            Latha
+            Leelawadee
+            Leelawadee UI
+            Levenim MT
+            LilyUPC
+            Lucida Console
+            Lucida Sans
+            Lucida Sans Unicode
+            Malgun Gothic
+            Mangal
+            Marlett
+            Meiryo
+            Meiryo UI
+            Microsoft Himalaya
+            Microsoft JhengHei
+            Microsoft JhengHei UI
+            Microsoft New Tai Lue
+            Microsoft PhagsPa
+            Microsoft Sans Serif
+            Microsoft Tai Le
+            Microsoft Uighur
+            Microsoft YaHei
+            Microsoft YaHei UI
+            Microsoft Yi Baiti
+            MingLiU
+            MingLiU_HKSCS
+            MingLiU_HKSCS-ExtB
+            MingLiU-ExtB
+            Miriam
+            Miriam Fixed
+            Modern
+            Mongolian Baiti
+            MoolBoran
+            MS Gothic
+            MS Mincho
+            MS PGothic
+            MS PMincho
+            MS Serif
+            MS Sans Serif
+            MS UI Gothic
+            MV Boli
+            Myanmar Text
+            Narkisim
+            Neue Haas Grotesk Text Pro
+            Nirmala UI
+            NSimSun
+            Nyala
+            Palatino Linotype
+            Plantagenet Cherokee
+            PMingLiU
+            PMingLiU-ExtB
+            Raavi
+            Rockwell Nova
+            Rod
+            Roman
+            Sakkal Majalla
+            Sanskrit Text
+            Script
+            Segoe Fluent Icons
+            Segoe MDL2 Assets
+            Segoe Print
+            Segoe Script
+            Segoe UI
+            Segoe UI Emoji
+            Segoe UI Historic
+            Segoe UI Variable
+            Segoe UI Symbol
+            Shonar Bangla
+            Shruti
+            SimHei
+            Simplified Arabic
+            Simplified Arabic Fixed
+            SimSun
+            SimSun-ExtB
+            Sitka Banner
+            Sitka Display
+            Sitka Heading
+            Sitka Small
+            Sitka Subheading
+            Sitka Text
+            Small Fonts
+            Sylfaen
+            Symbol
+            System
+            Tahoma
+            Terminal
+            Times New Roman
+            Traditional Arabic
+            Trebuchet MS
+            Tunga
+            UD Digi Kyokasho N-B
+            UD Digi Kyokasho NK-B
+            UD Digi Kyokasho NK-R
+            UD Digi Kyokasho NP-B
+            UD Digi Kyokasho NP-R
+            UD Digi Kyokasho N-R
+            Urdu Typesetting
+            Utsaah
+            Vani
+            Verdana
+            Verdana Pro
+            Vijaya
+            Vrinda
+            Webdings
+            Wingdings
+            Yu Gothic
+            Yu Gothic UI
+            Yu Mincho
+        )"
+        return StrSplit(optionsFont, "`n")
     }
 }
 
