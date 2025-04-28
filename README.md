@@ -47,7 +47,7 @@ A: Mostly, yes! It grabs text from anything that's visible. But if the window is
 A: The script only sends the grabbed text to Google's translation service. It doesn’t save anything, log anything, or do anything shady. Or at least it's not suppose to. If it is, report it, for sure.
 
 **Q: Can I change the language?**  
-A: Yep! You just edit a line in the script to pick your target language.
+A: Yep! You just select the language on the drop to pick your target language to work with. 
 
 **Q: Why AutoHotkey v2?**  
 A: Because it's newer, cleaner, and I'm pretending I'm a responsible coder.
