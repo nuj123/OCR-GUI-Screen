@@ -30,7 +30,7 @@ Although it's already added in the script, here's the cheat sheet:
     Remove-WindowsCapability -Online -Name "{LANGUAGE_VARIABLE}"
     ```
 
-> Note: `{LANGUAGE_VARIABLE}` will look something like `Language.OCR.Jpn~~~~0.0.1.0` for Japanese OCR.
+> Note: `{LANGUAGE_VARIABLE}` will look something like `Language.OCR~~~ja-JP~0.0.1.0` for Japanese OCR.
 
 ## FAQ
 
