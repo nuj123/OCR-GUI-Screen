@@ -45,6 +45,8 @@ class Translator {
         response.Open("GET", url . "?" . headers . params, false)
         ; A_Clipboard := url . "?" . headers . params
         response.Send()
+        response.WaitForResponse() ; <- this ensures it waits for completion
+
         if response.Status = 200 {
             Translation := response.ResponseText
             TranslationObject := Jxon_Load(&Translation)
@@ -67,7 +69,7 @@ class Translator {
             else
                 Res .= Format("%{:02X}", Code)
         }
-        return Res
+        try return Res
     }
 }
 

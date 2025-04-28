@@ -3,14 +3,17 @@
 SendMode "Input"
 SetWorkingDir A_ScriptDir
 
+; adds icon to compiled script 
+;@Ahk2Exe-AddResource %A_ScriptDir%\Fish.ico, 14
+; TraySetIcon("Fish.ico", 1)
+
 #Warn All, Off
 #ErrorStdOut 'UTF-8'
 
-#include %A_WorkingDir%\Lib\OCR.ahk
-; #Include %A_WorkingDir%\Lib\print_debug.ahk
-#include %A_WorkingDir%\Lib\fuzzy.ahk
-#include %A_WorkingDir%\Lib\gtranslate.ahk
-#include %A_WorkingDir%\Lib\_JXON.ahk
+#include F:\OneDrive\AHK\v2\OCR GUI Screen\Lib\OCR.ahk
+#include F:\OneDrive\AHK\v2\OCR GUI Screen\Lib\fuzzy.ahk
+#include F:\OneDrive\AHK\v2\OCR GUI Screen\Lib\gtranslate.ahk
+#include F:\OneDrive\AHK\v2\OCR GUI Screen\Lib\_JXON.ahk
 
 CoordMode('Pixel', 'Client')
 CoordMode('Mouse', 'Screen')
@@ -30,6 +33,7 @@ class ScreenTL
     OldOCRResult := ""
     toggle_start := 0
     OldoutDetectWinX  := ""
+    ; Initialize the variable to store the previous Y-coordinate of the detected window
     OldoutDetectWinY := ""
     OldoutDetectWinWinID := ""
     oldUpDown_FontSize := ""
@@ -91,13 +95,14 @@ class ScreenTL
         this.chkNotes := this.guiStartUP.Add("CheckBox", newSection " section vChkBox_showNotes " v_checkBox, "Show Notes? (Script will reload)")
         this.chkNotes.OnEvent("Click", ObjBindMethod(this, "ToggleNotes"))
 
+        this.GuiStartUp.Add("Text")
         this.guiStartUP.SetFont("w700")
-        this.guiStartUP.Add("Text", "center w" this.Gui_CTRL_WIDTH, "Language to OCR in UWP")
+        this.guiStartUP.Add("Text", "center section w" this.Gui_CTRL_WIDTH, "(1) Screen Read: OCR w/ UWP")
 
         this.guiStartUP.SetFont("w400")
 
         this.guiStartUP.Add("Text", "center w" this.Gui_CTRL_WIDTH, "(Preinstalled Languages only!)")
-        this.txt_OCR := this.guiStartUP.Add("Text", "w" this.Gui_CTRL_WIDTH, "OCR Language:")
+        this.txt_OCR := this.guiStartUP.Add("Text", "w" this.Gui_CTRL_WIDTH, "a) OCR Language:")
 
         this.GenerateList()
 
@@ -128,7 +133,7 @@ class ScreenTL
                 ddl_OCR_Avail.Push(v)
             }
 
-            this.guiStartUP.Add("Text", " w" this.Gui_CTRL_WIDTH, "Use Powershell to download/remove the selected language:")
+            this.guiStartUP.Add("Text", " w" this.Gui_CTRL_WIDTH, "b) Use Powershell to download/remove the selected language in the drop down list below.")
 
             this.guiStartUP.SetFont("c1f00cc")
             this.OCR_Available_DL_Languages := this.guiStartUP.Add("DDL", "vDDLAvail w" this.Gui_CTRL_WIDTH , ddl_ocr_Avail)
@@ -144,15 +149,16 @@ class ScreenTL
             this.Btn_RMV_Language.OnEvent("Click", ObjBindMethod(this, "RMV_Language"))
         }
 
+        ; this.guiStartUP.Add("Picture", "w" this.Gui_CTRL_WIDTH " h-1", A_ScriptDir "\Fish_Searching.png")
+
         this.guiStartUP.SetFont("c33BBB0")
-        this.guiStartup.Add("Text", "w" this.Gui_CTRL_WIDTH)
+        ; this.guiStartup.Add("Text", " section ys w" this.Gui_CTRL_WIDTH)
         this.guiStartUP.SetFont("w700")
 
-
-        this.guiStartup.Add("Text", "w" this.Gui_CTRL_WIDTH, "Now for the Google Translate Languages!")
+        this.guiStartup.Add("Text", "section ys w" this.Gui_CTRL_WIDTH " center", "(2) Google Translate Language Settings")
         this.guiStartUP.SetFont("w400")
         this.guiStartup.Add("Text", "w" this.Gui_CTRL_WIDTH, "Native/Source Language")
-        this.txt_TLFROM := this.guiStartup.Add("Text", "w" this.Gui_CTRL_WIDTH, "TL FROM:" )
+        this.txt_TLFROM := this.guiStartup.Add("Text", "w" this.Gui_CTRL_WIDTH, "a) TL FROM:" )
         this.ddl_src    := this.guiStartUP.Add("ddl","vddl_src_var w" this.Gui_CTRL_WIDTH, this.gListSrc)
         this.ddl_src.OnEvent("Change", ObjBindMethod(this, "SaveConfigs"))
 
@@ -160,18 +166,19 @@ class ScreenTL
 
         this.guiStartup.Add("Text", "w" this.Gui_CTRL_WIDTH, "Output Language")
 
-        this.txt_TLTO := this.guiStartup.Add("Text", "w" this.Gui_CTRL_WIDTH, "TL TO:")
+        this.txt_TLTO := this.guiStartup.Add("Text", "w" this.Gui_CTRL_WIDTH, "b) TL TO:")
         this.ddl_dest := this.guiStartUP.Add("ddl","vddl_src_dest w" this.Gui_CTRL_WIDTH, this.gListDest)
         this.ddl_dest.OnEvent("Change", ObjBindMethod(this, "SaveConfigs"))
 
+        ; this.guiStartUP.Add("Pic", "w" this.Gui_CTRL_WIDTH " h-1", A_ScriptDir "\Fish_Speaking.png")
+
         this.guiStartUP.SetFont("c4ecc35")
-        this.guiStartUP.Add("Text" , "section ys ")
         ; this.guiStartUP.Add("Text", "center w" this.Gui_CTRL_WIDTH, "Click button below to start OCR")
 
 
         ; edit box to type in window Title
         this.guiStartUP.SetFont("w700")
-        this.guiStartUP.Add("Text", " w" this.Gui_CTRL_WIDTH, "Window Title Notes:")
+        this.guiStartUP.Add("Text", "section ys w" this.Gui_CTRL_WIDTH, "(3) Drawing Overlay w/ AHK")
         this.guiStartUP.SetFont("w400")
         this.guiStartUP.Add("Text", " w" this.Gui_CTRL_WIDTH,
         '- The title of the Window to focus on.`n'
@@ -182,6 +189,18 @@ class ScreenTL
 
         this.btn_WINTITLE := this.guiStartUP.Add("Button", "w" this.Gui_CTRL_WIDTH, "Help Find Window Name")
         this.btn_WINTITLE.OnEvent("Click", ObjBindMethod(this, "FindWindowName"))
+
+        this.RadioFull := this.guiStartUP.Add("Radio", "w" this.Gui_CTRL_WIDTH " ", "Use Full Window Title and Process Name")
+        this.RadioWinT := this.guiStartUP.Add("Radio", "w" this.Gui_CTRL_WIDTH " ", "Use just Window Title")
+        this.RadioEXE  := this.guiStartUP.Add("Radio", "w" this.Gui_CTRL_WIDTH " ", "Use just Process Name")
+
+        ; this.RadioFull.Value := IniRead(this.config_fileName, "GUI", "RadioFull")
+        ; this.RadioWinT.Value := IniRead(this.config_fileName, "GUI", "RadioWinT")
+        ; this.RadioEXE.Value  := IniRead(this.config_fileName, "GUI", "RadioEXE")
+
+        this.RadioFull.OnEvent("Click", ObjBindMethod(this, "SaveConfigs"))
+        this.RadioWinT.OnEvent("Click", ObjBindMethod(this, "SaveConfigs"))
+        this.RadioEXE.OnEvent("Click", ObjBindMethod(this, "SaveConfigs"))
 
         this.guiStartUP.SetFont("c1f00cc")
         this.edit_winTitle := this.guiStartUP.Add("Edit", " r3 center w" this.Gui_CTRL_WIDTH " vVar_WinTitle", "A")
@@ -204,12 +223,12 @@ class ScreenTL
         this.guiStartUP.Add("Text")
         this.guiStartUP.Add("Text",,"Font Size: ")
         this.guiStartUP.Add("Text", "r2 center w" this.Gui_CTRL_WIDTH // 4, "")
-        this.UpDown_FontSize := this.guiStartUP.Add("UpDown", "Left Range8-100", IniRead(this.config_fileName,"GUI", "UpDownFontSize", 14))
+        this.UpDown_FontSize := this.guiStartUP.Add("UpDown", "Left Range2-100", IniRead(this.config_fileName,"GUI", "UpDownFontSize", 14))
         this.UpDown_FontSize.OnEvent("Change", (*) => this.Log("Font Size Changed: " this.UpDown_FontSize.Value))
         this.guiStartUP.Add("Text", "w" this.Gui_CTRL_WIDTH // 2 " xp right", "FONT HEX color: 0x`n`nBKGRND HEX color: 0x")
         this.edit_colorTextFont := this.guiStartUP.Add("Edit", "w" (this.Gui_CTRL_WIDTH // 2 ) - 6 " limit6 yp", )
         this.edit_colorTextFont.OnEvent("Change", (*) => this.LimitToHex(this.edit_colorTextFont))
-        
+
 
         this.edit_colorTextBackground := this.guiStartUP.Add("Edit",  "w" (this.Gui_CTRL_WIDTH // 2) - 6 " limit6 xp", )
         this.edit_colorTextBackground.OnEvent("Change", (*) => this.LimitToHex(this.edit_colorTextBackground))
@@ -238,6 +257,7 @@ class ScreenTL
         this.btn_stop.Enabled := False
         this.edit_winTitle.Enabled := True
 
+        this.StartTime := A_TickCount
         this.Log("Loaded Successfully!", pre)
 
     }
@@ -264,7 +284,7 @@ class ScreenTL
                 this.guiOverlay.Hide()
             }
             ; MsgBox(this.edit_winTitle.Text)
-            this.Log("Found " this.edit_winTitle.Text "? " (WinActive(this.edit_winTitle.Text)), pre)
+            ; this.Log("Found " this.edit_winTitle.Text "? " (WinActive(this.edit_winTitle.Text)), pre)
             if !WinExist(this.edit_winTitle.Text)
             {
                 this.Log("Window Title: [" this.edit_winTitle.Text "] does not exist.", pre)
@@ -273,7 +293,12 @@ class ScreenTL
 
             language := (this.LANG_LIST[this.ddl_OCR.Value])
 
+            ; 1000 ms delay to allow for OCR rate limiting
+            if ((A_TickCount - this.StartTime) < 1000)
+                return
             this.ocrResult := OCR.FromWindow(this.edit_winTitle.Text, {scale:2, lang:language})
+            this.startTime := A_TickCount
+
             fuz := Fuzzy()
 
             val1 := Fuz.Match(this.oldOCRResult,this.ocrResult.text)
@@ -309,7 +334,7 @@ class ScreenTL
             this.OldwinW := winW
             this.OldwinH := winH
 
-            this.GenerateGUIOverlay()
+
 
             tempOCRLines := []
             ; Iterate over each detected line
@@ -318,6 +343,15 @@ class ScreenTL
                 ; Get the line text
                 text := line.Text
 
+                ; remove any english characters from the line
+                posttext := RegExReplace(text, "[a-zA-Z0-9]")
+
+                ; if posttext only has punctuations, skip it. We'll check this by doing a string replace of all punctuations and checking if the length is 0. We have to be mindful of non-english characters.
+                checkPostText := RegExReplace(postText, "[^\p{L}\p{N}]", "") ; remove all non-letters and non-numbers
+        
+                if (StrLen(checkPostText) = 0)
+                    continue
+
                 ; Or use the shortcut properties:
                 x := line.x
                 y := line.y
@@ -325,6 +359,7 @@ class ScreenTL
                 h := line.h
 
                 ; MouseMove(x, y, 1)
+                ; tempOCRLines.Push({text:text, x:x, y:y, w:w, h:h})
                 tempOCRLines.Push({text:text, x:x, y:y, w:w, h:h})
                 ; MsgBox("{text:" text "`n(" x "," y "," w "," h ")")
             }
@@ -338,14 +373,27 @@ class ScreenTL
             var_tlTo := this.ExtractFromSquareBracket(this.ddl_dest.Text)
 
             if !(Var_tlTo = (StrSplit(language,"-")[1])) {
+                this.Log("Translating...")
+                this.CursorWait
                 tl_text := Translator.Translate(str_tempOCRLines, var_tlTo)
+
+                ; this.guiOverlay.Cursor := "Wait"
             } else {
+                this.Log("Same source and destination language.")
                 tl_text := str_tempOCRLines
             }
-                    ; TODO: Add font size here
-                    if (this.edit_colorTextFont.text = "")
-                        this.edit_colorTextFont.text := "FFFF00"
-                    this.guiOverlay.setFont("c" this.edit_colorTextFont.text " s" this.UpDown_FontSize.Value, this.ddl_FontOptions.Text)
+
+            if !(tl_text)
+                return
+
+                this.CursorNormal
+                ; this.guiOverlay.Cursor := "Normal"
+                this.GenerateGUIOverlay()
+
+                if (this.edit_colorTextFont.text = "")
+                    this.edit_colorTextFont.text := "FFFF00"
+
+                this.guiOverlay.setFont("c" this.edit_colorTextFont.text " s" this.UpDown_FontSize.Value, this.ddl_FontOptions.Text)
                 for index, text in StrSplit(tl_text, "`n")
                 {
                     if (!text)
@@ -390,6 +438,16 @@ class ScreenTL
         ; this.guiOverlay.Opt(" +E0x80000")
         ; this.guiOverlay.Color := "0x202020"           ; fill it GREEN (we’ll key this out)
         this.guiOverlay.BackColor := "0xEEAA99"           ; The color to make transparent)
+    }
+
+    CursorWait() {
+        DllCall("SetCursor", "ptr", DllCall("LoadCursor", "ptr", 0, "str", "IDC_WAIT", "ptr"))
+
+    }
+
+    CursorNormal() {
+        DllCall("SetCursor", "ptr", DllCall("LoadCursor", "ptr", 0, "str", "IDC_ARROW", "ptr"))
+
     }
 
     HideGuiOverlay() {
@@ -438,7 +496,7 @@ class ScreenTL
         ; start OCR
 
         this.objReadScreen := ObjBindMethod(this, "ReadScreen").Bind(1,1)
-        SetTimer(this.objReadScreen, 80)
+        SetTimer(this.objReadScreen, 50)
     }
 
 
@@ -479,16 +537,21 @@ class ScreenTL
         winT := WinGetTitle("ahk_id" outDetectWinWinID)
         winP := WinGetProcessName("ahk_id" outDetectWinWinID)
 
+        tempWinFull := winT " ahk_exe " winP
+        tempWinTitle := winT
+        tempWinEXE := "ahk_exe " winP
+
+
         str := Format("
         (
             Window Title:
             --------------------------------------------
-            {1} ahk_exe {2}
+            {1}
             --------------------------------------------
             Press [Ctrl] to save and update your GUI.
             Press [Esc] to cancel.
             )",
-            winT, winP
+            (this.radiofull.value ? tempWinFull : (this.RadioWinT.Value ? tempWinTitle : tempWinEXE))
         )
 
         ToolTip(str, outDetectWinX - 150, outDetectWinY + 40)
@@ -498,7 +561,15 @@ class ScreenTL
             SetTimer(this.timer_DetectWindowName, 0)
             ToolTip()
 
-            this.edit_winTitle.Value := winT " ahk_exe " winP
+            if (this.RadioFull.Value)
+                this.edit_winTitle.Value := winT " ahk_exe " winP
+            else if (this.RadioWinT.Value)
+                this.edit_winTitle.Value := winT
+            else if (this.RadioEXE.Value)
+                this.edit_winTitle.Value := "ahk_exe " winP
+
+
+            ; this.edit_winTitle.Value := winT " ahk_exe " winP
             this.edit_winTitle.Enabled := True
             this.Log("Finding Window: Window Saved to Edit box!")
         } else if (GetKeyState("Esc", "P"))
@@ -525,7 +596,7 @@ class ScreenTL
         this.MainGuiH := MainGuiH
 
         this.SaveConfigs(1,1)
-
+        this.CursorNormal
         ExitApp
     }
 
@@ -603,7 +674,14 @@ class ScreenTL
             if (StrLen(This.edit_colorTextBackground.Value) = 6)
                 IniWrite((this.edit_colorTextBackground.Value), this.config_fileName, "GUI", "FontBackground")
             IniWrite(this.UpDown_FontSize.Value,this.config_fileName,"GUI","UpDownFontSize")
+
+            IniWrite(this.RadioFull.Value, this.config_fileName, "GUI", "RadioFull")
+            IniWrite(this.RadioWinT.Value, this.config_fileName, "GUI", "RadioWinT")
+            IniWrite(this.RadioEXE.Value,  this.config_fileName, "GUI", "RadioEXE")
             ; MsgBox(this.OCR_SIMILARITY_THRESHOLD)
+
+ 
+
             this.Log("Configs saved", pre)
         }
         catch as e {
@@ -671,9 +749,15 @@ class ScreenTL
             this.edit_colorTextFont.Value := IniRead(this.config_fileName, "GUI", "FontColor", "FFFF00")
             this.edit_colorTextBackground.Value := IniRead(this.config_fileName, "GUI", "FontBackground", "000000")
             this.UpDown_FontSize.Value := IniRead(this.config_fileName,"GUI", "UpDownFontSize", 14)
+
+            this.RadioFull.Value := IniRead(this.config_fileName, "GUI", "RadioFull", 1)
+            this.RadioWinT.Value := IniRead(this.config_fileName, "GUI", "RadioWinT",0)
+            this.RadioEXE.Value  := IniRead(this.config_fileName, "GUI", "RadioEXE",0)
+
+        
        }
         catch as e {
-            MsgBox("Loading Error: " e.Message)
+            MsgBox("Loading Error " e.what " [" e.Line "]: " e.Message)
         }
     }
 
@@ -766,6 +850,10 @@ class ScreenTL
         LANG_LIST := this.ListOfInstalledLanguages()
         this.RefreshDDL
         this.LoadConfigs(1,1)
+        ; extracts the text between the first set of ~~~ and ~
+
+        try this.ddl_OCR.Text := StrSplit(language_abbrev,"-")[1]
+        ; this.ddl_OCR.Value := this.OCR_Available_DL_Languages.Text
     }
 
     GetOcrLanguageName(capability) {
@@ -834,14 +922,21 @@ class ScreenTL
         var := "
         (
             This script operates in three phases.
-            PHASE 1: TEXT EXTRACTION - UWP OCR
+            TLDR:
+            (1): OCR retrieves text from the screen`n(2): Google Translates Text from (1)`n(3): AHK builds Overlay
+
+            PHASE 1: OCR - TEXT EXTRACTION with UWP
             To minimize installations of outside programs, this script taps into an OCR engine present in the Universal Windows Platform (UWP) API, specifically, the "Windows.Media.OCR" namespace.
             This is only available in Windows 10 and above.
             To be able to extract the text, the appropriate language MUST be installed on your computer.
-            PHASE 2: TEXT PARSING and TRANSLATING
+            PHASE 2: TRANSLATING - with Google Translate API
+            The text is then sent to the Google Translate API for translation.
+            The API is free to use, but you must have an internet connection.
+            Some limitations: I think the API is limited to 5000 characters per request, and 100 requests per 100 seconds.
             With the text retrieved from the OCR engine, the words are all joined together for one massive translation.
             Translation is done through the Google Translate API.
-            PHASE 3: DISPLAY
+            PHASE 3: DISPLAY - with AHK GUI
+            The translated text is then displayed on the screen, in the same position as the original text.
             The UWP OCR stores the positions of the lines it decoded. AHK now uses those position, along with the newly translated lines, to draw the on screen.
             The drawing is done via an AHK GUI. The background is set to be transparent, and only the Texts are drawn, respective to their word locations.
             Note:
@@ -1273,7 +1368,7 @@ class ScreenTL
 }
 
 
-*F8::Reload
+; *F8::Reload
 
 
-*F12::ExitApp
+; *F12::ExitApp
