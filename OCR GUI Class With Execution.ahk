@@ -1,7 +1,8 @@
+
 #Requires AutoHotkey v2
 #SingleInstance Force
 SendMode "Input"
-SetWorkingDir A_ScriptDir
+SetWorkingDir A_ScriptDir 
 
 ; adds icon to compiled script 
 ;@Ahk2Exe-AddResource %A_ScriptDir%\Fish.ico, 14
@@ -29,7 +30,15 @@ goTL := ScreenTL()
 
 class ScreenTL
 {
-    config_fileName := A_ScriptDir "/SCREEN_OCR_config.ini"
+    ; Setup 
+    ; /
+    ; Documentation:
+    ; 
+    ; /
+
+
+
+    fileName := A_ScriptDir "/SCREEN_OCR_config.ini"
     OldOCRResult := ""
     toggle_start := 0
     OldoutDetectWinX  := ""
