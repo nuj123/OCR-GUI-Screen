@@ -30,15 +30,8 @@ goTL := ScreenTL()
 
 class ScreenTL
 {
-    ; Setup 
-    ; /
-    ; Documentation:
-    ; 
-    ; /
 
-
-
-    fileName := A_ScriptDir "/SCREEN_OCR_config.ini"
+    config_fileName := A_ScriptDir "/SCREEN_OCR_config.ini"
     OldOCRResult := ""
     toggle_start := 0
     OldoutDetectWinX  := ""
