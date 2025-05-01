@@ -1,4 +1,3 @@
-
 #Requires AutoHotkey v2
 #SingleInstance Force
 SendMode "Input"
@@ -25,9 +24,71 @@ goTL := ScreenTL()
 ; #50B9FE   BLUE - VARIABLES
 ; #529955   GREEN - STRINGS
 ; #33BBB0   BlueGreen - CLASS
-; #FF2D10  RED - TODO !
+; #FF2D10   RED - TODO !
 ; #6A9955   Comments
 
+/*
+    Class: ScreenTL
+    Description:
+        This class provides functionality for performing OCR (Optical Character Recognition) on a screen, translating the extracted text using Google Translate API, 
+        and displaying the translated text as an overlay on the screen. It includes GUI elements for configuration, language selection, and customization of the overlay.
+
+    Properties:
+        - config_fileName: Path to the configuration file.
+        - OldOCRResult: Stores the previous OCR result for comparison.
+        - toggle_start: Toggle state for starting OCR.
+        - OldoutDetectWinX, OldoutDetectWinY, OldoutDetectWinWinID: Store previous window detection coordinates and ID.
+        - oldUpDown_FontSize: Stores the previous font size.
+        - oldFontOptions: Stores the previous font options.
+        - Oldedit_colorTextBackground, Oldedit_colorTextFont: Store previous text and background colors.
+
+    Methods:
+        - __New(): Initializes the class, sets up the GUI, and loads configurations.
+        - SetWinTitle(callback, info): Saves the window title to the configuration.
+        - ExtractFromSquareBracket(str): Extracts text within square brackets from a string.
+        - ReadScreen(callback, info): Performs OCR on the screen, translates the text, and displays it as an overlay.
+        - GenerateGuiOverlay(): Creates a transparent GUI overlay for displaying translated text.
+        - CursorWait(): Changes the cursor to a wait state.
+        - CursorNormal(): Resets the cursor to the default state.
+        - HideGuiOverlay(): Hides the GUI overlay.
+        - StartOCR(callback, info): Starts the OCR process and sets up a timer for continuous reading.
+        - EndOCR(callback, info): Stops the OCR process and disables the overlay.
+        - FindWindowName(callback, info): Detects the name of the currently active window.
+        - DetectWindowName(): Continuously detects the active window's title and process name.
+        - Log(str, prefix): Logs messages to the status bar.
+        - OnGuiClose(*): Handles the GUI close event and saves configurations.
+        - ToggleNotes(callback, info): Toggles the visibility of notes and reloads the script.
+        - LogError(errObj, mode): Logs error messages with details.
+        - LimitToHex(ctrl): Ensures that input in a control is limited to valid hexadecimal values.
+        - SaveConfigs(callback, info): Saves the current configurations to the INI file.
+        - LoadConfigs(callback, info): Loads configurations from the INI file.
+        - Initialize(): Initializes default values and settings.
+        - GenerateList(): Generates lists of installed and available languages for OCR and translation.
+        - RefreshDDL(): Refreshes the dropdown lists for language selection.
+        - RMV_Language(callback, info): Removes a selected OCR language using PowerShell.
+        - DL_Language(callback, info): Downloads a selected OCR language using PowerShell.
+        - GetOcrLanguageName(capability): Retrieves the name of an OCR language from its capability string.
+        - OpenLangSettings(callback, info): Opens the Windows Language & Region settings.
+        - PowerShellList(ctrl, info): Retrieves a list of available OCR languages using PowerShell.
+        - varMessageIntro(): Returns an array of introductory messages about the script's functionality.
+        - varMessageWarning(): Returns an array of warning messages about the script's limitations.
+        - powershellOutput(psCommand): Executes a PowerShell command and captures its output.
+        - powerShellWait(psCommand): Executes a PowerShell command and waits for its completion.
+        - TT(str): Displays a tooltip with the given message.
+        - TT_OFF(): Hides the tooltip.
+        - powershellListOfInstalledLanguages(): Retrieves a list of installed OCR languages using PowerShell.
+        - powershellListOfAllAvailableLanguages(): Retrieves a list of all available OCR languages using PowerShell.
+        - ListOfInstalledLanguages(): Retrieves a list of installed OCR languages using the OCR library.
+        - GoogleLanguageList(): Returns a list of supported Google Translate languages with their codes.
+        - FontOptions(): Returns a list of available font options for the overlay text.
+
+    Notes:
+        - The script uses UWP OCR for text extraction, which requires the appropriate language to be installed on the system.
+        - Google Translate API is used for translation, requiring an internet connection.
+        - The overlay is drawn using AHK GUI, with customizable font, size, and colors.
+        - The script supports downloading and removing OCR languages via PowerShell.
+        - Windows 10 or above is required for UWP OCR functionality.
+*/
 class ScreenTL
 {
 
@@ -60,7 +121,7 @@ class ScreenTL
 
         this.guiStartUP.SetFont("w700 c50B9FE")
 
-
+        ; 
         if (this.var_showNotes) {
 
                 this.guiStartUP.SetFont("w700")
@@ -376,7 +437,7 @@ class ScreenTL
 
             if !(Var_tlTo = (StrSplit(language,"-")[1])) {
                 this.Log("Translating...")
-                this.CursorWait
+                ; this.CursorWait
                 tl_text := Translator.Translate(str_tempOCRLines, var_tlTo)
 
                 ; this.guiOverlay.Cursor := "Wait"
@@ -388,7 +449,7 @@ class ScreenTL
             if !(tl_text)
                 return
 
-                this.CursorNormal
+                ; this.CursorNormal
                 ; this.guiOverlay.Cursor := "Normal"
                 this.GenerateGUIOverlay()
 
@@ -442,15 +503,15 @@ class ScreenTL
         this.guiOverlay.BackColor := "0xEEAA99"           ; The color to make transparent)
     }
 
-    CursorWait() {
-        DllCall("SetCursor", "ptr", DllCall("LoadCursor", "ptr", 0, "str", "IDC_WAIT", "ptr"))
+    ; CursorWait() {
+    ;     DllCall("SetCursor", "ptr", DllCall("LoadCursor", "ptr", 0, "str", "IDC_WAIT", "ptr"))
 
-    }
+    ; }
 
-    CursorNormal() {
-        DllCall("SetCursor", "ptr", DllCall("LoadCursor", "ptr", 0, "str", "IDC_ARROW", "ptr"))
+    ; CursorNormal() {
+    ;     DllCall("SetCursor", "ptr", DllCall("LoadCursor", "ptr", 0, "str", "IDC_ARROW", "ptr"))
 
-    }
+    ; }
 
     HideGuiOverlay() {
         this.guiOverlay.Hide()
@@ -598,7 +659,7 @@ class ScreenTL
         this.MainGuiH := MainGuiH
 
         this.SaveConfigs(1,1)
-        this.CursorNormal
+        ; this.CursorNormal
         ExitApp
     }
 
