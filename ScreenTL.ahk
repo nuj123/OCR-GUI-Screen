@@ -1,9 +1,9 @@
 #Requires AutoHotkey v2
 #SingleInstance Force
 SendMode "Input"
-SetWorkingDir A_ScriptDir 
+SetWorkingDir A_ScriptDir
 
-; adds icon to compiled script 
+; adds icon to compiled script
 ;@Ahk2Exe-AddResource %A_ScriptDir%\Fish.ico, 14
 ; TraySetIcon("Fish.ico", 1)
 
@@ -30,7 +30,7 @@ goTL := ScreenTL()
 /*
     Class: ScreenTL
     Description:
-        This class provides functionality for performing OCR (Optical Character Recognition) on a screen, translating the extracted text using Google Translate API, 
+        This class provides functionality for performing OCR (Optical Character Recognition) on a screen, translating the extracted text using Google Translate API,
         and displaying the translated text as an overlay on the screen. It includes GUI elements for configuration, language selection, and customization of the overlay.
 
     Properties:
@@ -121,7 +121,7 @@ class ScreenTL
 
         this.guiStartUP.SetFont("w700 c50B9FE")
 
-        ; 
+        ;
         if (this.var_showNotes) {
 
                 this.guiStartUP.SetFont("w700")
@@ -178,6 +178,7 @@ class ScreenTL
 
         this.guiStartUP.Add("Text", "center w" this.Gui_CTRL_WIDTH, "EXPERIMENTAL")
         this.guiStartUP.SetFont("w400")
+
 
         if !(A_IsAdmin) {
             this.guiStartUP.Add("Text", "w" this.Gui_CTRL_WIDTH, "View list of Available OCR Languages to download?`n`nTo see list, script must start with admin rights.`nCurrent Admin Status: " (A_IsAdmin ? "Is Admin" : "Is NOT Admin"))
@@ -411,7 +412,7 @@ class ScreenTL
 
                 ; if posttext only has punctuations, skip it. We'll check this by doing a string replace of all punctuations and checking if the length is 0. We have to be mindful of non-english characters.
                 checkPostText := RegExReplace(postText, "[^\p{L}\p{N}]", "") ; remove all non-letters and non-numbers
-        
+
                 if (StrLen(checkPostText) = 0)
                     continue
 
@@ -743,7 +744,7 @@ class ScreenTL
             IniWrite(this.RadioEXE.Value,  this.config_fileName, "GUI", "RadioEXE")
             ; MsgBox(this.OCR_SIMILARITY_THRESHOLD)
 
- 
+
 
             this.Log("Configs saved", pre)
         }
@@ -817,7 +818,7 @@ class ScreenTL
             this.RadioWinT.Value := IniRead(this.config_fileName, "GUI", "RadioWinT",0)
             this.RadioEXE.Value  := IniRead(this.config_fileName, "GUI", "RadioEXE",0)
 
-        
+
        }
         catch as e {
             MsgBox("Loading Error " e.what " [" e.Line "]: " e.Message)

@@ -1,4 +1,4 @@
-# QuickTranslate  
+# ScreenTL
 *(A very imperfect but very handy script)*
 
 ## What this script does  

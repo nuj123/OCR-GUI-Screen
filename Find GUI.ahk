@@ -1,26 +1,34 @@
 #Requires Autohotkey v2
 
-_AHK := "OCR GUI Class With Execution.ahk ahk_class AutoHotkeyGUI"
-_EXE := "OCR GUI Class With Execution.exe ahk_class AutoHotkeyGUI"
-log_it := ""
+MsgBox( GetFileNames() )
 
-try {
-    WinGetPos(&_AHKx, &_AHKy, &_AHKw, &_AHKh, _AHK)
-    log_it := "AHK: (" . _AHKx . ", " . _AHKy . ", " . _AHKw . ", " . _AHKh ")`n"
-}
-catch as e {
-    _AHK := ""
-}
-try {
-    WinGetPos(&_EXEx, &_EXEy, &_EXEw, &_EXEh, _EXE)
-    log_it .= "EXE: (" . _EXEx . ", " . _EXEy . ", " . _EXEw . ", " . _EXEh ")"
-}
-catch as e {
-    _EXE := ""
-}
 
-if !(log_it)
-    log_it := "Neither .AHK or .EXE GUI windows were found."
+GetFileNames() {
+    log_it := ""
+    Loop Files, A_ScriptDir "\*.*", "F" {
+        SplitPath(A_LoopFileName, , , &fileExe , &fileName )
 
-MsgBox( log_it )
+        if !(fileExe = "ahk") && !(fileExe = "exe")
+            continue
 
+        if (A_LoopField = A_SCRIPTName)
+            continue
+
+        _AHK := A_LoopFileName " ahk_class AutoHotkeyGUI"
+
+        try {
+            WinGetPos(&_AHKx, &_AHKy, &_AHKw, &_AHKh, _AHK)
+            if !(log_it)
+                log_it := "Name: (x,y,w,h)`n--------------------------`n"
+
+            log_it .= A_LoopFileName ":     (" . _AHKx . "," . _AHKy . "," . _AHKw . "," . _AHKh ")`n"
+        }
+
+    }
+
+    If !(log_it)
+        log_it := "No ahk windows in the current directory were found running."
+
+    return log_it
+
+}
