@@ -10,10 +10,10 @@ SetWorkingDir A_ScriptDir
 #Warn All, Off
 #ErrorStdOut 'UTF-8'
 
-#include F:\OneDrive\AHK\v2\OCR GUI Screen\Lib\OCR.ahk
-#include F:\OneDrive\AHK\v2\OCR GUI Screen\Lib\fuzzy.ahk
-#include F:\OneDrive\AHK\v2\OCR GUI Screen\Lib\gtranslate.ahk
-#include F:\OneDrive\AHK\v2\OCR GUI Screen\Lib\_JXON.ahk
+#include %A_ScriptDir%\Lib\OCR.ahk
+#include %A_ScriptDir%\Lib\fuzzy.ahk
+#include %A_ScriptDir%\Lib\gtranslate.ahk
+#include %A_ScriptDir%\Lib\_JXON.ahk
 
 CoordMode('Pixel', 'Client')
 CoordMode('Mouse', 'Screen')
